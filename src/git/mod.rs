@@ -3,6 +3,7 @@
 pub mod actions;
 pub mod ai;
 pub mod graph;
+pub mod images;
 pub mod ops;
 pub mod rebase;
 pub mod repo;

@@ -164,6 +164,7 @@ pub struct Hunk {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DiffText {
     pub target: DiffTarget,
+    pub images: Option<super::images::ImageComparison>,
     pub binary: bool,
     pub too_large: bool,
     /// Added, Deleted, Modified or Renamed (Untracked shows as Added).
@@ -288,6 +289,7 @@ impl RepoSnapshot {
 pub struct Repo {
     pub(crate) repo: Repository,
     pub(crate) workdir: PathBuf,
+    pub(crate) image_cache: std::cell::RefCell<super::images::ImageCache>,
 }
 
 impl Repo {
@@ -299,7 +301,7 @@ impl Repo {
             .workdir()
             .map(|p| p.to_path_buf())
             .unwrap_or_else(|| repo.path().to_path_buf());
-        Ok(Repo { repo, workdir })
+        Ok(Repo { repo, workdir, image_cache: Default::default() })
     }
 
     /// Create a new repository at `path` (`git init`).
@@ -309,7 +311,7 @@ impl Repo {
             .workdir()
             .map(|p| p.to_path_buf())
             .unwrap_or_else(|| path.to_path_buf());
-        Ok(Repo { repo, workdir })
+        Ok(Repo { repo, workdir, image_cache: Default::default() })
     }
 
     pub fn workdir(&self) -> &Path {
@@ -854,6 +856,7 @@ impl Repo {
         };
         let mut out = DiffText {
             target: target.clone(),
+            images: self.image_comparison(target),
             binary: false,
             too_large: false,
             status: FileKind::Modified,
@@ -1319,6 +1322,7 @@ pub fn conflict_view(target: &DiffTarget, file: &Path) -> DiffText {
     let text = std::fs::read(file).unwrap_or_default();
     let mut out = DiffText {
         target: target.clone(),
+        images: None,
         binary: false,
         too_large: false,
         status: FileKind::Conflicted,

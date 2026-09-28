@@ -66,7 +66,7 @@ pub fn match_count(app: &App) -> usize {
     }
 }
 
-pub fn view(app: &App) -> Element<'_> {
+pub fn header(app: &App) -> Element<'_> {
     let t = &app.theme;
     let busy = app.busy > 0;
     let selected = app.selected_file.clone();
@@ -99,6 +99,17 @@ pub fn view(app: &App) -> Element<'_> {
             header = header.push(text_widget("no file selected").size(12).color(t.weak));
         }
     }
+    if let Some(images) = app.diff.as_ref().and_then(|d| d.images.as_ref()) {
+        if images.svg {
+            header = header.push(small_button(
+                if app.image_source { "Preview" } else { "Source diff" },
+                Some(Message::DiffImageSource),
+            ));
+        }
+        if !app.image_source || !images.svg {
+            return header.into();
+        }
+    }
     if app.has_line_selection() {
         let n = app
             .line_sel
@@ -119,9 +130,6 @@ pub fn view(app: &App) -> Element<'_> {
         }
         header = header.push(small_button("clear", Some(Message::ClearLineSel)));
     }
-    let conflicted = selected
-        .as_ref()
-        .is_some_and(|t| app.snapshot.conflicted.iter().any(|f| f.path == t.path()));
     header = header.push(small_button("find", Some(Message::DiffSearchOpen)));
     header = header.push(small_button("-", (app.diff_opts.context > 0).then_some(Message::DiffContext(-1))));
     header = header.push(text_widget(app.diff_opts.context.to_string()).size(12).color(t.weak));
@@ -132,7 +140,16 @@ pub fn view(app: &App) -> Element<'_> {
     ));
     header = header.push(small_button(if app.wrap { "wrap on" } else { "wrap" }, Some(Message::DiffWrap)));
 
-    let mut col = column![header].spacing(0);
+    header.into()
+}
+
+pub fn view(app: &App) -> Element<'_> {
+    let t = &app.theme;
+    let busy = app.busy > 0;
+    let selected = app.selected_file.clone();
+    let conflicted = selected.as_ref()
+        .is_some_and(|t| app.snapshot.conflicted.iter().any(|f| f.path == t.path()));
+    let mut col = column![header(app)].spacing(0);
     if conflicted {
         if let (Some(p), Some(d)) = (selected.as_ref().map(|t| t.path().to_owned()), app.diff.as_ref()) {
             let (n, ours, theirs) = conflict_info(d);
@@ -198,7 +215,9 @@ pub fn view(app: &App) -> Element<'_> {
             );
         }
     }
-    if app.diff_search_active {
+    let previewing = app.diff.as_ref().and_then(|d| d.images.as_ref())
+        .is_some_and(|i| !i.svg || !app.image_source);
+    if app.diff_search_active && !previewing {
         let total = match_count(app);
         let mut bar = row![
             text_input("search in the diff", &app.diff_search)
@@ -230,7 +249,9 @@ pub fn view(app: &App) -> Element<'_> {
             container(text_widget(msg).size(12).color(t.weak)).padding(8).into()
         }
         Some(d) => {
-            if d.binary {
+            if let Some(images) = d.images.as_ref().filter(|i| !i.svg || !app.image_source) {
+                crate::ui::image_preview::view(app, images)
+            } else if d.binary {
                 container(text_widget("binary file").size(12).color(t.weak)).padding(8).into()
             } else if d.too_large {
                 container(text_widget("file too large to diff (over 2 MB)").size(12).color(t.error))

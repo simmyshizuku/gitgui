@@ -475,6 +475,7 @@ pub enum Message {
     /// Window mode only: modifier keys changed.
     ModifiersChanged(keyboard::Modifiers),
     DiffWrap,
+    DiffImageSource,
     EditorWrap,
     DiffLineClick { hunk: usize, line: usize, shift: bool },
     DiffDragTo { hunk: usize, line: usize },
@@ -567,6 +568,7 @@ pub struct App {
     pub selected_file: Option<DiffTarget>,
     pub diff: Option<crate::git::repo::DiffText>,
     pub diff_loading: bool,
+    pub image_source: bool,
     pub filter: String,
     pub filter_active: bool,
     pub filtered: Vec<usize>,
@@ -708,6 +710,7 @@ impl App {
             selected_file: None,
             diff: None,
             diff_loading: false,
+            image_source: false,
             filter: String::new(),
             filter_active: false,
             filtered: Vec::new(),
@@ -1448,6 +1451,8 @@ impl App {
     pub fn select_file(&mut self, target: Option<DiffTarget>) {
         if self.selected_file != target {
             self.line_sel = None;
+            self.diff_text_sel = None;
+            self.image_source = false;
             self.follow_selection_in_editor(target.as_ref());
         }
         self.selected_file = target.clone();
@@ -2433,6 +2438,9 @@ impl App {
                 self.diff_jump.set(true);
             }
             Message::DiffSearchOpen => {
+                if self.diff.as_ref().and_then(|d| d.images.as_ref()).is_some_and(|i| i.svg) {
+                    self.image_source = true;
+                }
                 self.diff_search_active = true;
                 self.focus = Pane::Detail;
                 self.ops.push(Box::new(iced_core::widget::operation::focusable::focus(
@@ -2468,6 +2476,12 @@ impl App {
             Message::ModifiersChanged(m) => self.modifiers = m,
             Message::DiffWhitespace => self.toggle_whitespace(),
             Message::DiffWrap => self.wrap = !self.wrap,
+            Message::DiffImageSource => {
+                self.image_source = !self.image_source;
+                self.line_sel = None;
+                self.diff_text_sel = None;
+                self.diff_search_active = false;
+            }
             Message::EditorWrap => self.editor_wrap = !self.editor_wrap,
             Message::DiffLineClick { hunk, line, shift } => {
                 self.focus = Pane::Detail;

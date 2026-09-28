@@ -11,6 +11,7 @@ pub mod log;
 pub mod logo;
 pub mod menu;
 pub mod merge;
+pub mod image_preview;
 pub mod modal;
 pub mod sidebar;
 pub mod state;

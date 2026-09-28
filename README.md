@@ -76,6 +76,7 @@ Give the agent the control API by linking `skill/SKILL.md` into its skills direc
 
 - **History**: commit graph with branch lanes, filter by summary / author / hash, full message body, files per commit.
 - **Staging**: files, hunks and single lines; discard by file, hunk or line; commit, amend, commit and push; stash with keep-index / untracked options.
+- **Image previews**: select a PNG, JPEG, GIF, WebP, BMP, ICO or SVG in Changes to compare before and after, with a transparency checkerboard and dimensions. SVG has a Preview / Source diff toggle for text and line staging. Previews use the working tree, index or commit as appropriate, and stack vertically in narrow panes. Animated images show a still frame. Files over 16 MB or raster images over 16 megapixels show a size-limit message; SVG references to external files are omitted.
 - **AI commit messages**: `AI suggest` or `Ctrl+G` writes a message for the staged changes through the AI CLI you already have (`claude`, `codex`, `gemini`, `ollama`, `llm`, or any command that reads a prompt on stdin: `git config gitgui.ai-command`, `$GITGUI_AI_COMMAND`). No keys or servers in gitgui; `Ctrl+Z` brings your own text back. The prompt is yours to change with `gitgui.ai-prompt` (`{diff}`, `{branch}`, `{recent}`).
 - **Commit menu**: cherry-pick, revert, tag, branch here, checkout detached, reset soft / mixed / hard, copy hash, open in browser.
 - **History rewriting**: reword, squash, fixup, drop, move up / down, edit, autosquash. gitgui runs `git rebase` for you, no editor pops up.
